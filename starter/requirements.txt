@@ -1,0 +1,9 @@
+openai>=1.40
+edge-tts>=6.1
+python-dotenv>=1.0
+websockets>=12.0
+
+# only needed for --mic
+faster-whisper>=1.0
+sounddevice>=0.4
+numpy>=1.26

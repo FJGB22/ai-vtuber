@@ -1,0 +1,40 @@
+# ---- secrets: never commit ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials*.json
+.secrets/
+
+# ---- python ----
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# ---- models & generated audio (big, regenerable) ----
+models/
+*.onnx
+*.gguf
+*.bin
+*.pt
+*.safetensors
+*.wav
+*.mp3
+
+# ---- local data stores ----
+chroma/
+*.sqlite3
+*.db
+
+# ---- editors / os ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

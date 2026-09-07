@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building an AI VTuber — Roadmap</title>
+<style>
+  :root{
+    --bg:#0f0f0e; --surface-1:#161615; --surface-2:#1e1e1c; --line:#2e2e2b;
+    --ink:#f4f3ee; --ink-2:#c3c2b7; --ink-3:#8a897f;
+    --accent:#3987e5; --accent-2:#d55181;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    --ok:#199e70; --warn:#c98500;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(57,135,229,.35)}
+  a:hover{border-bottom-color:var(--accent)}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.88em;
+    background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#e8e7df}
+
+  /* ---------- header ---------- */
+  header.hero{padding:72px 0 44px;border-bottom:1px solid var(--line)}
+  .kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+  h1{font-size:clamp(34px,5.5vw,54px);line-height:1.08;margin:0 0 18px;letter-spacing:-.02em;font-weight:700}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:19px;color:var(--ink-2);max-width:62ch;margin:0}
+
+  /* ---------- progress bar ---------- */
+  .sticky{position:sticky;top:0;z-index:20;background:rgba(15,15,14,.88);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 0}
+  .sticky .inner{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:16px}
+  .track{flex:1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--s1),var(--s3));transition:width .35s ease}
+  .pct{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-2);min-width:118px;text-align:right}
+  .reset{font-size:12px;color:var(--ink-3);background:none;border:1px solid var(--line);
+    border-radius:6px;padding:4px 9px;cursor:pointer;font-family:inherit}
+  .reset:hover{color:var(--ink);border-color:var(--ink-3)}
+
+  h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+    margin:64px 0 20px;font-weight:600}
+  h3{font-size:22px;margin:0 0 8px;letter-spacing:-.01em}
+  p{margin:0 0 14px}
+  .muted{color:var(--ink-2)}
+
+  /* ---------- architecture ---------- */
+  .arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:20px 0 8px}
+  .node{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px}
+  .node .n{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+  .node .t{font-weight:600;margin-bottom:5px}
+  .node .d{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+  .node[data-c="1"]{border-left:3px solid var(--s1)}
+  .node[data-c="2"]{border-left:3px solid var(--s2)}
+  .node[data-c="3"]{border-left:3px solid var(--s3)}
+  .node[data-c="4"]{border-left:3px solid var(--s4)}
+  .node[data-c="5"]{border-left:3px solid var(--s5)}
+  .node[data-c="6"]{border-left:3px solid var(--ink-3)}
+
+  /* ---------- latency chart ---------- */
+  figure{margin:24px 0 8px}
+  figcaption{font-size:13.5px;color:var(--ink-2);margin-top:14px;max-width:70ch}
+  .figtitle{font-weight:600;margin-bottom:4px}
+  .figsub{font-size:13.5px;color:var(--ink-3);margin-bottom:16px}
+  .stack{display:flex;height:34px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
+  .seg{position:relative;cursor:default;border-right:2px solid var(--surface-1)}
+  .seg:last-child{border-right:0}
+  .seg:hover{filter:brightness(1.18)}
+  .axis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);
+    margin-top:7px;font-variant-numeric:tabular-nums}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:16px;font-size:13.5px;color:var(--ink-2)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .tip{position:fixed;pointer-events:none;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:7px;padding:7px 11px;font-size:13px;color:var(--ink);opacity:0;transition:opacity .12s;
+    z-index:60;white-space:nowrap;box-shadow:0 6px 22px rgba(0,0,0,.5)}
+
+  /* ---------- tables ---------- */
+  .tw{overflow-x:auto;margin:16px 0 6px;border:1px solid var(--line);border-radius:var(--radius)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:600px}
+  th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+    padding:12px 14px;border-bottom:1px solid var(--line);font-weight:600;background:var(--surface-1)}
+  td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td strong{color:var(--ink);font-weight:600}
+  .pick{color:var(--ok);font-size:12px;font-weight:600;letter-spacing:.04em}
+
+  /* ---------- phases ---------- */
+  .phase{background:var(--surface-1);border:1px solid var(--line);border-radius:14px;
+    margin-bottom:14px;overflow:hidden;transition:border-color .2s}
+  .phase.done{border-color:rgba(25,158,112,.5)}
+  .phead{display:flex;align-items:flex-start;gap:14px;padding:20px 22px;cursor:pointer;user-select:none}
+  .phead:hover{background:rgba(255,255,255,.018)}
+  .num{font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:var(--bg);
+    background:var(--ink-3);border-radius:6px;padding:3px 8px;margin-top:3px;flex:none}
+  .phase.done .num{background:var(--ok);color:#fff}
+  .ptitles{flex:1;min-width:0}
+  .ptime{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+  .chev{color:var(--ink-3);flex:none;margin-top:4px;transition:transform .2s}
+  .phase.open .chev{transform:rotate(90deg)}
+  .pbody{display:none;padding:0 22px 22px;border-top:1px solid var(--line);margin-top:-1px}
+  .phase.open .pbody{display:block}
+  .pbody h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+    margin:22px 0 10px;font-weight:600}
+  ul.tasks{list-style:none;padding:0;margin:0}
+  ul.tasks li{display:flex;gap:11px;align-items:flex-start;padding:5px 0;font-size:15px;color:var(--ink-2)}
+  ul.tasks input{margin:5px 0 0;accent-color:var(--s3);width:15px;height:15px;flex:none;cursor:pointer}
+  ul.tasks label{cursor:pointer}
+  ul.tasks li.checked label{color:var(--ink-3);text-decoration:line-through}
+  .callout{border-left:3px solid var(--warn);background:rgba(201,133,0,.07);
+    padding:12px 15px;border-radius:0 8px 8px 0;font-size:14.5px;color:var(--ink-2);margin:14px 0 0}
+  .callout b{color:var(--ink)}
+  .goal{border-left:3px solid var(--s1);background:rgba(57,135,229,.07);
+    padding:12px 15px;border-radius:0 8px 8px 0;font-size:14.5px;color:var(--ink-2);margin:0 0 4px}
+  .goal b{color:var(--ink)}
+  .done-when{border-left:3px solid var(--ok);background:rgba(25,158,112,.07);
+    padding:12px 15px;border-radius:0 8px 8px 0;font-size:14.5px;color:var(--ink-2);margin:14px 0 0}
+  .done-when b{color:var(--ink)}
+
+  ol.hard{padding-left:0;list-style:none;counter-reset:h;margin:0}
+  ol.hard li{counter-increment:h;background:var(--surface-1);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px 16px 54px;position:relative;margin-bottom:10px;color:var(--ink-2);font-size:15px}
+  ol.hard li::before{content:counter(h);position:absolute;left:18px;top:16px;font-weight:700;
+    color:var(--accent-2);font-variant-numeric:tabular-nums}
+  ol.hard b{color:var(--ink);display:block;margin-bottom:3px;font-size:15.5px}
+
+  .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:14px}
+  .links a{display:block;background:var(--surface-1);border:1px solid var(--line);border-bottom:1px solid var(--line);
+    border-radius:var(--radius);padding:13px 15px;color:var(--ink)}
+  .links a:hover{border-color:var(--accent)}
+  .links .lt{font-weight:600;font-size:14.5px;margin-bottom:3px}
+  .links .ld{font-size:13px;color:var(--ink-3);line-height:1.45}
+  footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+  @media (max-width:600px){ .wrap{padding:0 16px 80px} .sticky .inner{padding:0 16px} table{font-size:13.5px} }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Life project · from the basics</p>
+  <h1>Build your own <em>Neuro-sama</em></h1>
+  <p class="lede">Nine phases, from "what is asyncio" to an AI character that hears you, answers in
+  under a second, moves its face, reads Twitch chat, remembers regulars, and plays games.
+  Tick things off as you go — your progress is saved in this browser.</p>
+</div></header>
+
+<div class="sticky"><div class="inner">
+  <div class="track"><div class="fill" id="fill"></div></div>
+  <div class="pct" id="pct">0 / 0 complete</div>
+  <button class="reset" id="reset">reset</button>
+</div></div>
+
+<div class="wrap">
+
+<h2>What you are actually building</h2>
+<p class="muted">It looks like one thing. It is six programs talking to each other, and the hard
+part is never any single one of them — it is the wiring, the timing, and the fact that all of it
+has to happen faster than a human notices.</p>
+
+<div class="arch">
+  <div class="node" data-c="1"><div class="n">1 · input</div><div class="t">Ears</div>
+    <div class="d">Twitch/YouTube chat + your microphone. Voice activity detection, then speech-to-text.</div></div>
+  <div class="node" data-c="6"><div class="n">2 · arbitration</div><div class="t">Director</div>
+    <div class="d">Decides what to react to and when to talk. The piece nobody tells you about.</div></div>
+  <div class="node" data-c="2"><div class="n">3 · cognition</div><div class="t">Brain</div>
+    <div class="d">An LLM with a persona, streaming tokens out sentence by sentence.</div></div>
+  <div class="node" data-c="3"><div class="n">4 · state</div><div class="t">Memory</div>
+    <div class="d">Rolling context, summaries, a vector store of past streams, a facts table.</div></div>
+  <div class="node" data-c="4"><div class="n">5 · output</div><div class="t">Voice</div>
+    <div class="d">Text-to-speech, queued and streamed so she starts talking before she's finished thinking.</div></div>
+  <div class="node" data-c="5"><div class="n">6 · embodiment</div><div class="t">Face &amp; Stage</div>
+    <div class="d">Live2D in VTube Studio, lip sync, expressions, OBS, and game controllers.</div></div>
+</div>
+
+<h2>The constraint that shapes everything</h2>
+
+<figure>
+  <div class="figtitle">Latency budget: chat message arrives → first syllable comes out</div>
+  <div class="figsub">Typical local-GPU pipeline. Anything past ~1.5s and viewers stop believing she's listening.</div>
+  <div class="stack" id="stack"></div>
+  <div class="axis"><span>0 ms</span><span>1,150 ms total</span></div>
+  <div class="legend" id="legend"></div>
+  <figcaption>Every stage is additive, so a "small" 400 ms regression anywhere kills the illusion
+  everywhere. Two design choices buy back most of the budget: keep replies short (a 120-token cap
+  beats any optimisation you will write), and speak sentence-by-sentence while the model is still
+  generating rather than waiting for the full reply.</figcaption>
+</figure>
+
+<div class="tw"><table>
+  <thead><tr><th>Stage</th><th>Budget</th><th>What blows it up</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Ingest &amp; context assembly</strong></td><td>~50 ms</td><td>Synchronous memory lookups; embedding on the hot path</td></tr>
+    <tr><td><strong>LLM time-to-first-token</strong></td><td>~400 ms</td><td>Huge system prompts, cold model, CPU inference, long history</td></tr>
+    <tr><td><strong>First complete sentence</strong></td><td>~300 ms</td><td>Model that writes long preambles before saying anything</td></tr>
+    <tr><td><strong>TTS time-to-first-audio</strong></td><td>~250 ms</td><td>Non-streaming TTS; big diffusion voice models; cloud round trips</td></tr>
+    <tr><td><strong>Playback &amp; lip sync</strong></td><td>~150 ms</td><td>Large audio buffers; re-encoding; virtual cable latency</td></tr>
+  </tbody>
+</table></div>
+
+<h2>The roadmap</h2>
+<div id="phases"></div>
+
+<h2>Choosing your stack</h2>
+<p class="muted">Every one of these is swappable, and you should swap them — but pick the boring
+option first and get the whole loop working end to end before you optimise any single box.</p>
+
+<div class="tw"><table>
+  <thead><tr><th>The brain (LLM runtime)</th><th>Good for</th><th>Trade-off</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Ollama</strong> <span class="pick">START HERE</span></td><td>One user, one machine, OpenAI-compatible API in one command</td><td>Not built for throughput; less control than raw llama.cpp</td></tr>
+    <tr><td><strong>llama.cpp</strong></td><td>Maximum control, GGUF quantisation, runs on CPU or odd hardware</td><td>You manage flags, builds, and context yourself</td></tr>
+    <tr><td><strong>vLLM</strong></td><td>Serious throughput, batching, production serving</td><td>Linux + NVIDIA, heavier setup, overkill for one viewer-facing character</td></tr>
+    <tr><td><strong>LM Studio</strong></td><td>GUI model browsing, quick experiments, also serves an API</td><td>Desktop app in the loop</td></tr>
+    <tr><td><strong>Cloud API</strong></td><td>No GPU needed, lowest time-to-first-token, best reasoning</td><td>Costs money per hour of stream; provider content filters; network jitter</td></tr>
+  </tbody>
+</table></div>
+
+<div class="tw"><table>
+  <thead><tr><th>The voice (TTS)</th><th>Latency / cost</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>edge-tts</strong> <span class="pick">DAY 1</span></td><td>~300 ms, free, no key</td><td>Surprisingly good, zero setup. No voice cloning — you get Microsoft's presets.</td></tr>
+    <tr><td><strong>Kokoro</strong> (82M, Apache-2.0)</td><td>Very fast local, 2–3 GB VRAM</td><td>Reported ~210× realtime on an RTX 4090. 54 preset voices, no cloning.</td></tr>
+    <tr><td><strong>Chatterbox</strong> (350M, MIT)</td><td>Local, 4–8 GB VRAM</td><td>Voice cloning from a 5–10 second clip. The usual pick for a custom character voice.</td></tr>
+    <tr><td><strong>GPT-SoVITS / Fish Speech</strong></td><td>Heavier local</td><td>Best-in-class cloning quality if you'll train on a voice dataset.</td></tr>
+    <tr><td><strong>Azure / ElevenLabs</strong></td><td>Low latency, per-character billing</td><td>Neuro-sama reportedly uses an Azure voice, pitch-shifted up. Cheap trick, works.</td></tr>
+  </tbody>
+</table></div>
+
+<div class="tw"><table>
+  <thead><tr><th>The ears (STT)</th><th>Good for</th><th>Trade-off</th></tr></thead>
+  <tbody>
+    <tr><td><strong>faster-whisper</strong> <span class="pick">START HERE</span></td><td>Accurate, GPU or CPU, easy Python API</td><td>Chunk-based, not truly streaming — you wait for an endpoint</td></tr>
+    <tr><td><strong>whisper.cpp</strong></td><td>CPU and Apple Silicon, no Python deps</td><td>Subprocess or bindings to wire up</td></tr>
+    <tr><td><strong>sherpa-onnx</strong></td><td>Genuinely streaming, tiny, runs anywhere</td><td>Lower accuracy than Whisper on messy audio</td></tr>
+    <tr><td><strong>Silero VAD</strong></td><td>Not STT — the gate in front of it. Use it.</td><td>None. Replace any energy-threshold VAD with this early.</td></tr>
+  </tbody>
+</table></div>
+
+<div class="tw"><table>
+  <thead><tr><th>The face</th><th>Good for</th><th>Trade-off</th></tr></thead>
+  <tbody>
+    <tr><td><strong>VTube Studio + Live2D</strong> <span class="pick">START HERE</span></td><td>The industry default. Public websocket API for expressions, hotkeys and parameters.</td><td>2D only. A rigged model is a real cost (see below).</td></tr>
+    <tr><td><strong>VSeeFace / VRM</strong></td><td>3D avatars, free VRM models available</td><td>Less granular API control</td></tr>
+    <tr><td><strong>Warudo</strong></td><td>3D with a node-graph you can drive programmatically</td><td>Heavier, steeper learning curve</td></tr>
+    <tr><td><strong>Model sourcing</strong></td><td>Free base models exist and are fine for months of development</td><td>Commissioned Live2D rigs commonly run from a few hundred to a few thousand USD depending on rig complexity — do this last</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Six problems nobody warns you about</h2>
+<ol class="hard">
+  <li><b>Latency compounds, and only the total is visible.</b> You will optimise the LLM by 200 ms and
+  not notice that your audio buffer costs 400. Instrument every stage with timestamps from day one,
+  print the breakdown on every turn, and never guess where the time went.</li>
+
+  <li><b>Turn-taking is a real design problem.</b> A stream produces far more stimuli than she can
+  answer — spam, your voice, game events, silence. Something must decide what earns a response and
+  what gets ignored, and "reply to everything" reads as a bot instantly. Dead air is just as fatal:
+  she needs to speak unprompted when nothing is happening.</li>
+
+  <li><b>Chat is adversarial, permanently.</b> Viewers will spend entire streams trying to make your
+  character say something that gets you banned. Treat every chat message as untrusted data, never as
+  instructions — fence it in the prompt, filter the input, filter the output, and build a physical
+  mute button before your first public stream, not after.</li>
+
+  <li><b>She will hear herself and talk to herself.</b> Your microphone picks up your speakers, your
+  STT transcribes her own voice, and she replies to it in an infinite loop. Fix with headphones, a
+  loopback-free audio route, gating the mic while TTS plays, or proper acoustic echo cancellation.</li>
+
+  <li><b>Personality decays as context fills.</b> Twenty turns in, the system prompt is far away and
+  she drifts into a helpful assistant. Re-inject the persona, summarise aggressively, and keep the
+  character's voice in weights rather than only in the prompt — the reported approach for Neuro-sama
+  is iterative offline fine-tuning on curated stream transcripts, with prompts used for situational
+  context, not core personality.</li>
+
+  <li><b>Everything wants the same GPU.</b> The LLM, the TTS, the STT and the game you're streaming
+  all live on one card. Budget VRAM on paper before you buy models, and expect to move at least one
+  component to CPU or to the cloud.</li>
+</ol>
+
+<h2>Read these</h2>
+<div class="links">
+  <a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber" target="_blank" rel="noopener">
+    <div class="lt">Open-LLM-VTuber</div><div class="ld">Mature, cross-platform, pluggable STT/TTS/LLM backends with Live2D. Run it first to see the target.</div></a>
+  <a href="https://github.com/proj-airi/awesome-ai-vtubers" target="_blank" rel="noopener">
+    <div class="lt">awesome-ai-vtubers</div><div class="ld">Curated index of AI VTuber projects and tooling. Start here when you need a component.</div></a>
+  <a href="https://deepwiki.com/kimjammer/Neuro" target="_blank" rel="noopener">
+    <div class="lt">kimjammer/Neuro</div><div class="ld">A readable Neuro-sama clone. Its shared-Signals + threaded-modules design is worth studying.</div></a>
+  <a href="https://github.com/VedalAI/neuro-sdk" target="_blank" rel="noopener">
+    <div class="lt">Neuro Game SDK</div><div class="ld">Vedal's actual public protocol for letting the AI play games. The best available primary source.</div></a>
+  <a href="https://github.com/DenchiSoft/VTubeStudio" target="_blank" rel="noopener">
+    <div class="lt">VTube Studio API</div><div class="ld">Official websocket API docs — auth, hotkeys, expressions, model parameters.</div></a>
+  <a href="https://twitchio.dev/" target="_blank" rel="noopener">
+    <div class="lt">TwitchIO</div><div class="ld">Async Python library for the Twitch API and EventSub. Your chat ingest layer.</div></a>
+  <a href="https://github.com/SYSTRAN/faster-whisper" target="_blank" rel="noopener">
+    <div class="lt">faster-whisper</div><div class="ld">The default local STT. CTranslate2 backend, int8 quantisation, runs on CPU in a pinch.</div></a>
+  <a href="https://ollama.com" target="_blank" rel="noopener">
+    <div class="lt">Ollama</div><div class="ld">One command to a local OpenAI-compatible LLM endpoint. The fastest path to Phase 1.</div></a>
+</div>
+
+<footer>Ticks are stored locally in this browser only. Latency figures are typical ranges for a
+consumer-GPU pipeline, not benchmarks — measure your own.</footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ---------------- latency chart ---------------- */
+const SEG = [
+  {label:"Ingest & context assembly", ms:50,  c:"var(--s1)"},
+  {label:"LLM time-to-first-token",   ms:400, c:"var(--s2)"},
+  {label:"First complete sentence",   ms:300, c:"var(--s3)"},
+  {label:"TTS time-to-first-audio",   ms:250, c:"var(--s4)"},
+  {label:"Playback & lip sync",       ms:150, c:"var(--s5)"}
+];
+(function(){
+  const total = SEG.reduce((a,s)=>a+s.ms,0);
+  const stack = document.getElementById('stack');
+  const tip = document.getElementById('tip');
+  SEG.forEach(s=>{
+    const d = document.createElement('div');
+    d.className='seg'; d.style.flex = s.ms; d.style.background = s.c;
+    d.addEventListener('mousemove', e=>{
+      tip.textContent = `${s.label} — ${s.ms} ms (${Math.round(s.ms/total*100)}%)`;
+      tip.style.opacity = 1;
+      tip.style.left = Math.min(e.clientX+14, innerWidth-tip.offsetWidth-10)+'px';
+      tip.style.top  = (e.clientY-38)+'px';
+    });
+    d.addEventListener('mouseleave', ()=> tip.style.opacity = 0);
+    stack.appendChild(d);
+  });
+  document.getElementById('legend').innerHTML = SEG.map(s=>
+    `<span><i class="sw" style="background:${s.c}"></i>${s.label} · ${s.ms} ms</span>`
+  ).join('');
+})();
+
+/* ---------------- phases ---------------- */
+const PHASES = [
+ {t:"Foundations", time:"2–4 weeks · do not skip",
+  goal:"Be able to read every line of the starter project without guessing what it does.",
+  learn:[
+   "Python 3.11+: type hints, dataclasses, generators, context managers",
+   "asyncio properly: the event loop, tasks, queues, <code>gather</code>, <code>run_in_executor</code>",
+   "Threads vs coroutines — and why blocking calls must never touch the loop",
+   "Websockets and JSON-RPC-ish protocols (every component here speaks one)",
+   "Digital audio basics: sample rate, PCM, float32 arrays, RMS, buffers",
+   "venv, pip, git, and reading someone else's repo without panicking"],
+  done:"You can explain why the microphone runs in a thread but the TTS queue runs as a task.",
+  warn:"Skipping asyncio. Every part of this system is concurrent. Without the event loop model you will spend months debugging deadlocks you can't describe."},
+
+ {t:"A character that types", time:"1–2 weeks",
+  goal:"A consistent personality in your terminal, streaming tokens live.",
+  learn:[
+   "Chat completion APIs: message roles, system prompts, temperature, top_p",
+   "Streaming responses token by token instead of awaiting the whole reply",
+   "Context windows and token counting — what actually fits",
+   "Running a model locally: Ollama or llama.cpp, GGUF, quantisation, VRAM math",
+   "Prompt-writing for <em>character</em>, not helpfulness: voice, refusals, verbal tics",
+   "Few-shot examples in the system prompt to lock in tone"],
+  done:"She holds a recognisable personality across 20 turns and never says “As an AI”.",
+  warn:"Writing a 3,000-word persona. Long prompts raise latency and the model ignores the middle anyway. Reported estimates put Neuro-sama's system prompt around 1,000 tokens. Cap replies at ~120 tokens — this single dial does more for “feels alive” than anything else."},
+
+ {t:"Give it a voice", time:"1–2 weeks",
+  goal:"Under one second from stimulus to first syllable.",
+  learn:[
+   "The TTS landscape and what “streaming synthesis” actually means",
+   "Time-to-first-audio as the metric that matters, not audio quality benchmarks",
+   "Sentence chunking: emit and speak each sentence while the LLM still writes",
+   "An audio playback queue that never blocks the event loop",
+   "Voice cloning basics — reference clips, Chatterbox / GPT-SoVITS / RVC",
+   "Prosody and SSML: rate, pitch, emphasis"],
+  done:"You hit enter and hear the first word in well under a second, with no gap between sentences.",
+  warn:"Choosing a beautiful, slow TTS. On a live stream, 400 ms of merely-good beats 2 seconds of gorgeous, every time."},
+
+ {t:"Give it ears", time:"~2 weeks",
+  goal:"Talk to her out loud, and interrupt her mid-sentence.",
+  learn:[
+   "Microphone capture with sounddevice / PortAudio, block sizes, callbacks",
+   "Voice activity detection — start with energy, then move to Silero VAD",
+   "Endpointing: deciding when a human has finished their turn",
+   "Streaming ASR with faster-whisper / whisper.cpp / sherpa-onnx",
+   "Barge-in: cancelling in-flight TTS the instant you start speaking",
+   "Echo: stopping her from transcribing her own voice"],
+  done:"You cut her off halfway through a sentence, she stops immediately and answers what you said.",
+  warn:"The self-hearing loop. She speaks, the mic hears it, she replies to herself, forever. Headphones fix it for development; audio routing or echo cancellation fixes it for real."},
+
+ {t:"Give it a face", time:"~2 weeks",
+  goal:"A moving avatar whose mouth and expressions follow the audio and the mood.",
+  learn:[
+   "Live2D vs 3D/VRM, and what a “rig” actually is",
+   "VTube Studio's websocket API: auth tokens, hotkeys, expressions, parameters",
+   "Lip sync the easy way — route TTS output to a virtual audio cable and let VTube Studio drive the mouth",
+   "Emotion tags: have the LLM prefix each reply with <code>[happy]</code>/<code>[smug]</code> and map them to hotkeys",
+   "OBS: scenes, window capture, transparency, audio sources",
+   "Virtual audio devices — VB-Cable on Windows, BlackHole on macOS"],
+  done:"Her mouth moves in time with speech and her expression changes with the content of what she says.",
+  warn:"Rigging your own Live2D model as your first art project. It is a separate craft that takes months. Use a free model now; commission one when the software works."},
+
+ {t:"Put it on stream", time:"~3 weeks",
+  goal:"Thirty minutes live with real strangers and nothing catastrophic.",
+  learn:[
+   "Twitch OAuth, the Helix API and EventSub (TwitchIO or pyTwitchAPI)",
+   "Ingesting chat at volume: buffering, deduping, rate limits",
+   "YouTube Live chat API as a second source",
+   "The director pattern — priority, selection, and idle chatter",
+   "Prompt-injection defence: fencing chat text as data, never as instruction",
+   "Input filtering, output filtering, AutoMod, and a hard kill switch",
+   "OBS websocket for scene control; audio routing into the stream"],
+  done:"A stranger types something hostile in chat and she handles it without you touching anything.",
+  warn:"Going live before you have an output filter and a mute button. Assume from the first minute that chat's entire goal is to get your account banned — because for some of them, it is."},
+
+ {t:"Memory and a self", time:"ongoing",
+  goal:"She remembers a regular's running joke from three streams ago.",
+  learn:[
+   "Context management: rolling windows, and summarising older turns instead of dropping them",
+   "Episodic memory: embeddings + a vector store (Chroma, Qdrant, sqlite-vec)",
+   "Semantic memory: extracting durable facts into an actual table you can inspect",
+   "Retrieval that works — recency decay, relevance thresholds, not stuffing 20 chunks in",
+   "Evaluating persona consistency instead of vibing it",
+   "LoRA fine-tuning on your own curated transcripts (PEFT, Unsloth, Axolotl)",
+   "Dataset curation — the boring 90% of what makes a fine-tune good"],
+  done:"Retrieval visibly changes a reply, and you can point at the exact memory that caused it.",
+  warn:"Reaching for fine-tuning first. Prompt, then retrieval, then fine-tuning — in that order. The reported Neuro-sama loop is offline batch fine-tuning on curated stream transcripts between streams, not live learning; nothing updates weights mid-stream."},
+
+ {t:"Agency — playing games", time:"ongoing",
+  goal:"She plays something, and her choices are legible to the audience.",
+  learn:[
+   "Tool / function calling and constrained decoding to a JSON schema",
+   "Typed action protocols — read the Neuro Game SDK, this is exactly the pattern",
+   "Turning game state into a text description the model can reason over",
+   "Per-game controllers that validate and execute what the model picked",
+   "Screen capture + a vision model when there is no API to hook into",
+   "Race conditions: actions arriving before, during and after you asked for them"],
+  done:"She plays a simple game end to end and you can read a log of why she chose each move.",
+  warn:"Handing the LLM raw keyboard control. The public SDK design is the lesson: the game registers typed actions with schemas, the model picks one, the game validates and executes. Reasoning over constrained state, not blind input injection."},
+
+ {t:"Operations", time:"ongoing",
+  goal:"It runs for four hours without you babysitting it.",
+  learn:[
+   "Per-stage latency instrumentation and a live breakdown you can watch",
+   "VRAM budgeting across LLM + TTS + STT + the game itself",
+   "Crash recovery: every component must be able to die and restart alone",
+   "Structured logging and stream replay for debugging after the fact",
+   "Cost tracking if any part of the pipeline is a paid API",
+   "A control dashboard: mute, skip, force-speak, reload persona"],
+  done:"Something crashes mid-stream and the audience never finds out.",
+  warn:"Treating this as optional. The gap between a demo and a project you can actually run every week is entirely here."}
+];
+
+const wrap = document.getElementById('phases');
+let store = {};
+try { store = JSON.parse(localStorage.getItem('aivt') || '{}'); } catch(e) { store = {}; }
+function save(){ try { localStorage.setItem('aivt', JSON.stringify(store)); } catch(e){} }
+
+PHASES.forEach((p,i)=>{
+  const el = document.createElement('div');
+  el.className = 'phase';
+  el.innerHTML = `
+    <div class="phead">
+      <span class="num">${i}</span>
+      <div class="ptitles"><h3>${p.t}</h3><div class="ptime">${p.time}</div></div>
+      <span class="chev">›</span>
+    </div>
+    <div class="pbody">
+      <div class="goal"><b>Goal.</b> ${p.goal}</div>
+      <h4>What to learn</h4>
+      <ul class="tasks">${p.learn.map((l,j)=>`
+        <li><input type="checkbox" id="c${i}_${j}"><label for="c${i}_${j}">${l}</label></li>`).join('')}
+      </ul>
+      <div class="done-when"><b>You're done when.</b> ${p.done}</div>
+      <div class="callout"><b>The trap.</b> ${p.warn}</div>
+    </div>`;
+  el.querySelector('.phead').addEventListener('click', ()=> el.classList.toggle('open'));
+  wrap.appendChild(el);
+});
+
+const boxes = [...document.querySelectorAll('ul.tasks input')];
+boxes.forEach(b=>{
+  b.checked = !!store[b.id];
+  b.parentElement.classList.toggle('checked', b.checked);
+  b.addEventListener('change', ()=>{
+    store[b.id] = b.checked; save();
+    b.parentElement.classList.toggle('checked', b.checked);
+    update();
+  });
+});
+function update(){
+  const n = boxes.filter(b=>b.checked).length;
+  document.getElementById('fill').style.width = (n/boxes.length*100)+'%';
+  document.getElementById('pct').textContent = `${n} / ${boxes.length} complete`;
+  document.querySelectorAll('.phase').forEach(ph=>{
+    const bs = [...ph.querySelectorAll('input')];
+    ph.classList.toggle('done', bs.length>0 && bs.every(b=>b.checked));
+  });
+}
+document.getElementById('reset').addEventListener('click', ()=>{
+  store = {}; save(); boxes.forEach(b=>{ b.checked=false; b.parentElement.classList.remove('checked'); }); update();
+});
+document.querySelector('.phase').classList.add('open');
+update();
+</script>
+</body>
+</html>

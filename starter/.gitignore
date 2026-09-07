@@ -1,0 +1,30 @@
+# SECRETS - never commit these. Your API key lives in .env.
+.env
+*.key
+credentials*.json
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# models & audio - big, regenerable, not source
+models/
+*.onnx
+*.gguf
+*.bin
+*.pt
+*.wav
+*.mp3
+
+# memory stores
+chroma/
+*.sqlite3
+*.db
+
+# os
+Thumbs.db
+desktop.ini
+.DS_Store

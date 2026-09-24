@@ -29,7 +29,7 @@ small enough to read in one sitting and understand completely.
 **2. Install Python deps**
 
 ```bash
-cd starter
+cd mika
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt

@@ -1,7 +1,7 @@
 """
 lab.py — the Phase 0 experiment bench.
 
-The starter README asks you to *notice* four things. Noticing is unreliable.
+The README in this folder asks you to *notice* four things. Noticing is unreliable.
 This measures them instead.
 
     python lab.py latency     # exp 2: sentence chunking vs buffering the whole reply

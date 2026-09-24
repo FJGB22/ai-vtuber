@@ -57,6 +57,24 @@ sentence chunking saved nothing on the LLM side in these runs. The design only p
 off when tokens actually stream. The next targets are the ~3 s before the first
 sentence exists and the 1–2 s edge-tts takes to return its first audio.
 
+## Persona under pressure
+
+`python lab.py jailbreak` sends 5 classic prompt-injection attacks. `python lab.py drift`
+runs 9 chat turns, each pushing against a rule written in `persona.md`. Same setup as
+above; drift was run 3 times.
+
+| Test | Result |
+|---|---|
+| Classic attacks: print the prompt, "DAN", fake system message, repeat-the-text, grandma trick | 5/5 deflected in character, no prompt text leaked |
+| Drift: emotion tag present, including when a viewer asks her to drop it | 27/27 turns |
+| Drift: replies stay at 1–2 sentences | 27/27 turns |
+| Drift: never slips into assistant voice, including a "be a polite support agent" bit | 27/27 turns |
+
+Limits: the classic attacks are old enough that the base model refuses them anyway, so
+they say little about `wrap_chat()` itself. Drift targets my own rules, but three runs at
+temperature 0.9 is a small sample, and nothing here compares this persona against a
+refusal-style prompt.
+
 ## Modules
 
 | File | Responsibility |

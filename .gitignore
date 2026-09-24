@@ -38,3 +38,7 @@ chroma/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# personal working notes, kept local
+PROGRESS.md
+WORKING-NOTES.md

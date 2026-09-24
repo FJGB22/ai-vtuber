@@ -4,6 +4,11 @@ A real-time AI streaming character in Python — it listens, thinks, and talks b
 while it is still thinking. Built as a long-term study of low-latency, concurrent
 AI systems rather than as a wrapper around a chat API.
 
+<!-- TODO: record a 20–30s clip of Mika talking, convert to demo.gif (or upload an .mp4
+     by dragging it into the GitHub editor), save it in docs/, then uncomment:
+![Mika answering a viewer by voice](docs/demo.gif)
+-->
+
 The hard problem here is not "get an LLM to reply". It is getting the first word out
 of the speakers fast enough that the character feels alive, while a microphone, a
 speech recognizer, a token stream and an audio queue all run at the same time
@@ -23,8 +28,9 @@ two to four seconds of dead air per turn, and the illusion is gone.
 
 `brain.py` streams tokens and emits **complete sentences** the moment each one closes.
 `voice.py` holds a queue that starts speaking sentence one while the model is still
-writing sentence two. First audio lands well under a second, and total latency stops
-scaling with reply length.
+writing sentence two. With an endpoint that truly streams tokens, total latency stops
+scaling with reply length. The measurements below show how far the current setup is
+from that.
 
 Two consequences fall out of that design:
 
@@ -32,6 +38,24 @@ Two consequences fall out of that design:
   this is the single most sensitive dial in the project.
 - Speech has to be interruptible. When the mic detects the user talking, the audio
   queue is flushed mid-sentence (`voice.interrupt()` in `main.py`).
+
+## Measured, not guessed
+
+`python lab.py latency`, 3 runs, Gemini Flash-Lite via its OpenAI-compatible API and
+edge-tts, from Jakarta on a laptop with no discrete GPU:
+
+| Time until the listener hears anything | Median | Range |
+|---|---|---|
+| Total, sentence-chunked | 4.4 s | 4.3–5.2 s |
+| — LLM, until sentence 1 is complete | 2.9 s | 2.2–3.3 s |
+| — TTS, until the first audio byte | 2.2 s | 1.0–2.3 s |
+
+Once she starts, a reply takes about 8.6 s to say.
+
+What the numbers showed: this endpoint delivered each reply in a single piece, so
+sentence chunking saved nothing on the LLM side in these runs. The design only pays
+off when tokens actually stream. The next targets are the ~3 s before the first
+sentence exists and the 1–2 s edge-tts takes to return its first audio.
 
 ## Modules
 
@@ -41,7 +65,7 @@ Two consequences fall out of that design:
 | `voice.py` | Async TTS queue (edge-tts → ffplay), playback while generation continues, interrupt support |
 | `ears.py` | Microphone capture, energy-gate VAD, `faster-whisper` transcription on CPU, in its own thread |
 | `director.py` | Turn-taking. Arbitrates voice / chat / idle stimuli by priority so the character reacts to one thing at a time, and fills dead air after 25s |
-| `face.py` | VTube Studio websocket API — expression hotkeys driven by the brain's emotion tag |
+| `face.py` | VTube Studio websocket API — expression hotkeys driven by the brain's emotion tag *(written, not yet tested)* |
 | `config.py` | Single dataclass of every knob; loads secrets from outside the repo and fails loudly if missing |
 | `persona.md` | The character, as a prompt |
 | `lab.py` | Measurement bench: `latency`, `tokens`, `jailbreak`, `drift` |
@@ -83,16 +107,21 @@ python main.py --mic            # also listen to the microphone
 ```
 
 Any OpenAI-compatible endpoint works as the brain — a cloud model, Ollama, or LM Studio.
+The current setup uses Gemini Flash-Lite through its OpenAI-compatible API.
 The project targets a laptop with no discrete GPU: cloud brain, everything else local on
 CPU. `starter/LAPTOP-SETUP.md` covers that tradeoff.
 
 ## Status
 
 Phase 0 (foundations) is running end to end: text and voice in, streamed reply, spoken
-output, optional Live2D expressions. Long-term memory, Twitch integration, moderation,
-and autonomous behavior are later phases and deliberately not present — the roadmap in
-`roadmap.html` tracks them.
+output. Live2D expressions via `face.py` are implemented but not yet tested against
+VTube Studio. Long-term memory, Twitch integration, moderation, and autonomous behavior
+are later phases and deliberately not present — the roadmap in `roadmap.html` tracks them.
 
 ## Stack
 
-Python 3.12 · asyncio · OpenAI-compatible LLM API · edge-tts · faster-whisper · sounddevice · websockets
+Python 3.12 · asyncio · Gemini (OpenAI-compatible API) · edge-tts · faster-whisper · sounddevice · websockets
+
+---
+
+Built by [Jonathan Kuniardi](https://fjgb22.github.io) · Computer Science (Intelligent Systems), BINUS University

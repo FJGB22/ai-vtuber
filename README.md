@@ -96,7 +96,7 @@ once, which reads as a demo rather than a personality.
 Requires Python 3.12 and ffmpeg on PATH.
 
 ```bash
-cd starter
+cd mika
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 pip install -r requirements.txt
@@ -109,7 +109,7 @@ python main.py --mic            # also listen to the microphone
 Any OpenAI-compatible endpoint works as the brain — a cloud model, Ollama, or LM Studio.
 The current setup uses Gemini Flash-Lite through its OpenAI-compatible API.
 The project targets a laptop with no discrete GPU: cloud brain, everything else local on
-CPU. `starter/LAPTOP-SETUP.md` covers that tradeoff.
+CPU. `mika/LAPTOP-SETUP.md` covers that tradeoff.
 
 ## Status
 
